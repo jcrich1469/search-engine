@@ -1,7 +1,11 @@
 from urllib.request import urlopen
 from link_searcher import LinkFinder
 from file_manager import *
+from domain import *
 
+import os, sys
+
+from traceback import print_exc
 
 class Spider:
 
@@ -44,24 +48,33 @@ class Spider:
             Spider.queue.remove(page_url)
             Spider.crawled.add(page_url)
             Spider.update_files()
-    
+
+    @staticmethod
     def gather_links(page_url):
         # after connecting to server, convert form bytes to string.   
         html_string = ''
         # connecting, this is the strategy stuff that I will put in...
         try:
             response = urlopen(page_url)
+            # print('response successful')
+
             # checling it is html
-            if response.getheader('Content-Type') == 'text/html':
-                html_bytes = response.read()
-                html_string = html_bytes.decode("utf-8") # works 99% of the time
-            finder = LinkFinderSpider(base_url, page_url)
+            # if response.getheader('Content-Type') == 'text/html':
+            html_bytes = response.read()
+            html_string = html_bytes.decode("utf-8") # works 99% of the time
+
+            # print(html_string)
+
+            finder = LinkFinder(Spider.base_url, page_url)
 
             finder.feed(html_string)
         
-        except:
-
+        except Exception as e:
+            
             print('Error: cannot crawl page')
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
             return set()
 
         return finder.page_links()
@@ -71,16 +84,18 @@ class Spider:
     def add_links_to_queue(links):
 
         for url in links:
+
             if (url in Spider.queue) or (url in Spider.crawled):
                 continue
 
             if Spider.domain_name != get_domain_name(url):
                 continue
-            
+
             Spider.queue.add(url)
 
     @staticmethod
     def update_files():
+
         set_to_file(Spider.queue, Spider.queue_file)
         set_to_file(Spider.crawled, Spider.crawled_file)
 

@@ -7,17 +7,17 @@ class LinkFinder(HTMLParser):
         super().__init__()
         self.base_url = base_url
         self.page_url = page_url
-        self.links = ()
+        self.links = set()
 
     # handling
     def handle_starttag(self, tag, attrs):
-        print(tag)
+        # print(tag)
         if tag == 'a':
             for (attribute, value) in attrs:
                 if attribute == 'href':
                     # if relative, get full domain name... does not change absolute url
                     url = parse.urljoin(self.base_url, value)
-                    self.links,add(url)
+                    self.links.add(url)
     
     def page_links(self):
         return self.links
